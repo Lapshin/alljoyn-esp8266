@@ -22,10 +22,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
-#include <byteswap.h>
 #include <stdarg.h>
-#include <arpa/inet.h>
+#include <lwip/sockets.h>
 #include <ajtcl/aj_debug.h>
 #include <ajtcl/aj_util.h>
 
@@ -48,44 +46,23 @@ void AJ_Sleep(uint32_t ms)
 #ifndef NDEBUG
 AJ_Status _AJ_GetDebugTime(AJ_Time* timer)
 {
-    static int useEpoch = -1;
-    char* env;
-    struct timespec now;
+    /* Not implemented yet */
     AJ_Status status = AJ_ERR_RESOURCES;
 
-    if (useEpoch == -1) {
-        env = getenv("ER_DEBUG_EPOCH");
-        useEpoch = env && (strcmp(env, "1") == 0);
-    }
-
-    if (useEpoch) {
-        clock_gettime(CLOCK_REALTIME, &now);
-        timer->seconds = now.tv_sec;
-        timer->milliseconds = now.tv_nsec / 1000000;
-        status = AJ_OK;
-    }
     return status;
 }
 #endif
 
 uint32_t AJ_GetElapsedTime(AJ_Time* timer, uint8_t cumulative)
 {
-    uint32_t elapsed;
-    struct timespec now;
-
-    clock_gettime(CLOCK_MONOTONIC, &now);
-
-    elapsed = (1000 * (now.tv_sec - timer->seconds)) + ((now.tv_nsec / 1000000) - timer->milliseconds);
-    if (!cumulative) {
-        timer->seconds = now.tv_sec;
-        timer->milliseconds = now.tv_nsec / 1000000;
-    }
+    /* Not implemented yet */
+    uint32_t elapsed = 10;
     return elapsed;
 }
 void AJ_InitTimer(AJ_Time* timer)
 {
     struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
+    /* TODO get time from ntp server */
     timer->seconds = now.tv_sec;
     timer->milliseconds = now.tv_nsec / 1000000;
 
@@ -132,11 +109,8 @@ int8_t AJ_CompareTime(AJ_Time timerA, AJ_Time timerB)
 
 uint64_t AJ_DecodeTime(char* der, const char* fmt)
 {
-    struct tm tm;
-    if (!strptime(der, fmt, &tm)) {
-        return 0;
-    }
-    return (uint64_t) timegm(&tm);
+    /* Not implemented yet*/
+    return 0;
 }
 
 void* AJ_Malloc(size_t sz)
@@ -187,56 +161,19 @@ char*AJ_GetLine(char*str, size_t num, void*fp)
     return p;
 }
 
-static uint8_t ioThreadRunning = FALSE;
-static char cmdline[1024];
-static uint8_t consumed = TRUE;
-static pthread_t threadId;
-
-void* RunFunc(void* threadArg)
-{
-    while (ioThreadRunning) {
-        if (consumed) {
-            AJ_GetLine(cmdline, sizeof(cmdline), stdin);
-            consumed = FALSE;
-        }
-        AJ_Sleep(1000);
-    }
-    return 0;
-}
-
 uint8_t AJ_StartReadFromStdIn()
 {
-    int ret = 0;
-    if (!ioThreadRunning) {
-        ret = pthread_create(&threadId, NULL, RunFunc, NULL);
-        if (ret != 0) {
-            AJ_ErrPrintf(("Error: fail to spin a thread for reading from stdin\n"));
-        }
-        ioThreadRunning = TRUE;
-        return TRUE;
-    }
     return FALSE;
 }
 
 char* AJ_GetCmdLine(char* buf, size_t num)
 {
-    if (!consumed) {
-        strncpy(buf, cmdline, num);
-        buf[num - 1] = '\0';
-        consumed = TRUE;
-        return buf;
-    }
+    /* Not implemented yet */
     return NULL;
 }
 
 uint8_t AJ_StopReadFromStdIn()
 {
-    void* exit_status;
-    if (ioThreadRunning) {
-        ioThreadRunning = FALSE;
-        pthread_join(threadId, &exit_status);
-        return TRUE;
-    }
     return FALSE;
 }
 
@@ -271,17 +208,25 @@ int _AJ_DbgEnabled(const char* module)
 
 uint16_t AJ_ByteSwap16(uint16_t x)
 {
-    return bswap_16(x);
+    return ((x & 0x00FF) << 8) | ((x & 0xFF00) >> 8);
 }
 
 uint32_t AJ_ByteSwap32(uint32_t x)
 {
-    return bswap_32(x);
+    return ((x & 0x000000FF) << 24) | ((x & 0x0000FF00) << 8)
+           | ((x & 0x00FF0000) >> 8) | ((x & 0xFF000000) >> 24);
 }
 
 uint64_t AJ_ByteSwap64(uint64_t x)
 {
-    return bswap_64(x);
+    return ((x & UINT64_C(0x00000000000000FF)) << 56)
+           | ((x & UINT64_C(0x000000000000FF00)) << 40)
+           | ((x & UINT64_C(0x0000000000FF0000)) << 24)
+           | ((x & UINT64_C(0x00000000FF000000)) <<  8)
+           | ((x & UINT64_C(0x000000FF00000000)) >>  8)
+           | ((x & UINT64_C(0x0000FF0000000000)) >> 24)
+           | ((x & UINT64_C(0x00FF000000000000)) >> 40)
+           | ((x & UINT64_C(0xFF00000000000000)) >> 56);
 }
 
 AJ_Status AJ_IntToString(int32_t val, char* buf, size_t buflen)
@@ -304,54 +249,19 @@ AJ_Status AJ_InetToString(uint32_t addr, char* buf, size_t buflen)
     return status;
 }
 
+/*
 static FILE* logFile = NULL;
 static uint32_t logLim = 0;
+*/
 
 int AJ_SetLogFile(const char* file, uint32_t maxLen)
 {
-    if (logFile) {
-        fclose(logFile);
-    }
-    if (!file) {
-        logFile = NULL;
-    } else {
-        logFile = fopen(file, "w+");
-        if (!logFile) {
-            return -1;
-        }
-        logLim = maxLen / 2;
-    }
+    /* Not implemented yet*/
     return 0;
 }
 
 void AJ_Printf(const char* fmat, ...)
 {
-    va_list args;
-
-    va_start(args, fmat);
-    if (logFile) {
-        vfprintf(logFile, fmat, args);
-        if (logLim) {
-            /*
-             * Don't allow the log file to grow to more than 2 x logLim bytes
-             */
-            long pos = ftell(logFile);
-            if (pos >= (2 * logLim)) {
-                void* buf = malloc(logLim);
-                if (buf) {
-                    fseek(logFile, -logLim, SEEK_CUR);
-                    fread(buf, logLim, 1, logFile);
-                    fseek(logFile, 0, SEEK_SET);
-                    ftruncate(fileno(logFile), 0);
-                    fwrite(buf, logLim, 1, logFile);
-                    free(buf);
-                }
-            }
-        }
-        fflush(logFile);
-    } else {
-        vprintf(fmat, args);
-        fflush(stdout);
-    }
-    va_end(args);
+    /* Not implemented yet*/
+    return;
 }
