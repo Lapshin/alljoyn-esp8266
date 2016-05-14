@@ -11,7 +11,7 @@ Help(vars.GenerateHelpText(env))
 
 
 # Platform libraries
-#env.Append(LIBS = ['c', 'gcc', 'hal', 'pp','phy', 'net80211', 'lwip', 'wpa', 'main'])
+env.Append(LIBS = ['c', 'gcc', 'hal', 'pp','phy', 'net80211', 'lwip', 'wpa', 'main'])
 
 # Cross compile setup
 env.Replace(CC = 'xtensa-lx106-elf-cc')
@@ -63,6 +63,8 @@ if env['VARIANT'] == 'debug':
 else:
     env.Append(CFLAGS = '-Os')
     env.Append(LINKFLAGS = '-s')
+
+env.Append(LINKFLAGS = '-nostdlib')
 
 env['build_shared'] = False
 env['connectivity_options'] = [ 'tcp', 'ardp' ]

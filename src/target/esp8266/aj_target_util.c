@@ -31,16 +31,7 @@ uint8_t dbgTARGET_UTIL = 0;
 
 void AJ_Sleep(uint32_t ms)
 {
-    struct timespec waittime = { };
-    waittime.tv_sec = ms / 1000;
-    waittime.tv_nsec = (ms % 1000) * 1000000LL;
-
-    // nanosleep returns the amount of time slept before being interrupted by a signal,
-    // so loop until the full sleep is finished
-    while (nanosleep(&waittime, &waittime) == -1) {
-        continue;
-    }
-
+    os_delay_us(ms*1000);
 }
 
 #ifndef NDEBUG

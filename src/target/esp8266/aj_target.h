@@ -25,10 +25,7 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <string.h>
-#include <assert.h>
 #include <endian.h>
-#include <lwip/inet.h>
-#include <errno.h>
 
 #ifndef TRUE
 #define TRUE (1)
